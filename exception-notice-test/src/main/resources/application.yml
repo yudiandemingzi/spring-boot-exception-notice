@@ -1,0 +1,25 @@
+server:
+  port: 8084
+
+servlet:
+  context-path: /exception
+spring:
+  profiles: # 环境配置
+    active: dev
+
+  application:
+    name: exception-notice
+
+
+exception:
+  notice:
+    enable: true
+    ## 钉钉配置
+    ding-talk:
+      web-hook: https://oapi.dingtalk.com/robot/send?access_token=881bada83653fa8af8e08dcd18a9fb403c55b1dbfe5bf239b6f72fdf8e17d5c5
+      # 钉钉机器人发送通知时 需要@的钉钉用户账户，可多选
+      at-mobiles: 15990110149
+      msg-type: text
+
+
+
