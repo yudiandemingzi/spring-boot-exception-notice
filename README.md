@@ -1,20 +1,20 @@
-Springboot集成钉钉机器人实现异常预警通知功能
-
-
-## 前言
+## <font color=#FFD700>前言</font>
 
 在我们开发过程中，出现bug是非常常见的，不会说产品一旦上线就没有bug，出现bug没关系，关键是需要能够及时发现异常。
 
-当工程基本完成，开始部署到生产环境上，线上的工程一旦出现异常时，开发团队就需要主动感知异常并协调处理，当然人不能一天24小时去盯着线上工程，所以就需要一种机制来自动化的对异常进行通知，并精确到谁负责的那块代码。这样会极大地方便后续的运维。
+当工程基本完成，开始部署到生产环境上，线上的工程一旦出现异常时，开发团队就需要主动感知异常并协调处理，当然人不能一天24小时去盯着线上工程，
+
+所以就需要一种机制来自动化的对异常进行通知，并精确到谁负责的那块代码。这样会极大地方便后续的运维。
 
 本项目的开发愿景是为了给使用者在线上项目的问题排查方面能够带来帮助，简单配置，做到真正的开箱即用，同时异常信息尽量详细，帮助开发者快速定位问题。
+
 
 > 目前支持基于钉钉,企业微信和邮箱的异常通知
 
 
 ## 一、核心代码
 
-这里只展示一些核心代码，具体的完整代码可以看git[spring-boot-exception-notice](https://github.com/yudiandemingzi/spring-boot-exception-notice)
+这里只展示一些核心代码，具体的完整代码可以看github: [spring-boot-exception-notice](https://github.com/yudiandemingzi/spring-boot-exception-notice)
 
 
 #### 1、异常信息数据model
@@ -23,51 +23,32 @@ Springboot集成钉钉机器人实现异常预警通知功能
 @Data
 public class ExceptionInfo {
 
-    /**
-     * 工程名
-     */
+    /** 工程名 */
     private String project;
 
-    /**
-     * 异常的标识码
-     */
+    /** 异常的标识码 */
     private String uid;
 
-    /**
-     * 请求地址
-     */
+    /** 请求地址 */
     private String reqAddress;
 
-    /**
-     * 方法名
-     */
+    /** 方法名 */
     private String methodName;
 
-    /**
-     * 方法参数信息
-     */
+    /** 方法参数信息 */
     private Object params;
 
-    /**
-     * 类路径
-     */
+    /** 类路径*/
     private String classPath;
 
-    /**
-     * 异常信息
-     */
+    /** 异常信息 */
     private String exceptionMessage;
 
-    /**
-     * 异常追踪信息
-     */
+    /** 异常追踪信息*/
     private List<String> traceInfo = new ArrayList<>();
 
-    /**
-     * 最后一次出现的时间
-     */
+    /** 最后一次出现的时间 */
     private LocalDateTime latestShowTime = LocalDateTime.now();
-    
     }
 ```
 
@@ -80,7 +61,8 @@ public class ExceptionListener {
 
     private final ExceptionNoticeHandler handler;
 
-    @AfterThrowing(value = "@within(org.springframework.web.bind.annotation.RestController) || @within(org.springframework.stereotype.Controller) || @within(com.jincou.core.aop.ExceptionNotice)", throwing = "e")
+    @AfterThrowing(value = "@within(org.springframework.web.bind.annotation.RestController) || @within(org.springframework.stereotype.Controller) || @within(com.jincou.core.aop.ExceptionNotice)", 
+    throwing = "e")
     public void doAfterThrow(JoinPoint joinPoint, Exception e) {
         handler.createNotice(e, joinPoint);
     }
@@ -91,11 +73,6 @@ public class ExceptionListener {
 
 
 ```java
-/**
- * 异常信息通知配置类
- *
- * @author kongchong
- */
 @Configuration
 @ConditionalOnProperty(prefix = ExceptionNoticeProperties.PREFIX, name = "enable", havingValue = "true")
 @EnableConfigurationProperties(value = ExceptionNoticeProperties.class)
@@ -206,84 +183,32 @@ public class ExceptionNoticeHandler {
             }
         }, 6, exceptionProperties.getPeriod(), TimeUnit.SECONDS);
     }
-
-    /**
-     * 排除的需要统计的异常
-     */
-    private boolean containsException(Exception exception) {
-        Class<? extends Exception> exceptionClass = exception.getClass();
-        List<Class<? extends Exception>> list = exceptionProperties.getExcludeExceptions();
-        for (Class<? extends Exception> clazz : list) {
-            //校验是否存在
-            if (clazz.isAssignableFrom(exceptionClass)) {
-                return true;
-            }
-        }
-        return false;
-
-
-    }
-
-
-    /**
-     * 根据方法和传入的参数获取请求参数
-     *
-     * 注意这里就需要在参数前面加对应的RequestBody 和 RequestParam 注解
-     */
-    private Object getParameter(JoinPoint joinPoint) {
-        Signature signature = joinPoint.getSignature();
-        MethodSignature methodSignature = (MethodSignature) signature;
-        Method method = methodSignature.getMethod();
-        Parameter[] parameters = method.getParameters();
-
-        Object[] args = joinPoint.getArgs();
-        List<Object> argList = new ArrayList<>(parameters.length);
-        for (int i = 0; i < parameters.length; i++) {
-            RequestBody requestBody = parameters[i].getAnnotation(RequestBody.class);
-            if (requestBody != null) {
-                argList.add(args[i]);
-            }
-            RequestParam requestParam = parameters[i].getAnnotation(RequestParam.class);
-            if (requestParam != null) {
-                Map<String, Object> map = new HashMap<>(1);
-                String key = parameters[i].getName();
-                if (!StringUtils.isEmpty(requestParam.value())) {
-                    key = requestParam.value();
-                }
-                map.put(key, args[i]);
-                argList.add(map);
-            }
-        }
-        if (argList.size() == 0) {
-            return null;
-        } else if (argList.size() == 1) {
-            return argList.get(0);
-        } else {
-            return argList;
-        }
-    }
 }
 ```
+
 
 
 ## 二、如何配置
 
 #### 1、钉钉配置
 
-第一步：创建钉钉群 并在群中添加自定义机器人
+**第一步**：创建钉钉群 并在群中添加自定义机器人
+
 对于不太了解钉钉机器人配置的同学可以参考：[钉钉机器人](https://open-doc.dingtalk.com/microapp/serverapi2/krgddi "自定义机器人")
+
 具体的也可以参考这篇博客: [钉钉机器人SDK 封装预警消息发送工具 ](https://www.cnblogs.com/niaonao/p/11145065.html)
 
-第二步：增加配置文件
+**第二步**：增加配置文件
 
 以下以yml配置文件的配置方式为例
-```
+
+```yml
 exception:
   notice:
     enable: 启用开关 false或不配置的话本项目不会生效
     projectName: 指定异常信息中的项目名，不填的话默认取 spring.application.name的值
     included-trace-package: 追踪信息的包含的包名，配置之后只通知此包下的异常信息
-    period: 异常信息发送的时间周期 以秒为单位 默认值5，异常信息通知并不是立即发送的，默认设置了5s的周期，主要为了防止异常过多通知刷屏，同时钉钉针对异常通知刷屏的情况也增加了限流措施，建议不要修改
+    period: 异常信息发送的时间周期 以秒为单位 默认值5，异常信息通知并不是立即发送的，默认设置了5s的周期
     exclude-exceptions:
       - 需要排除的异常通知，注意 这里是异常类的全路径，可多选
     ## 钉钉配置
@@ -295,20 +220,22 @@ exception:
 ```
 #### 2、企业微信配置
 
-第一步：创建企业微信群 并在群中添加自定义机器人
+**第一步**：创建企业微信群 并在群中添加自定义机器人
+
 对于不太了解企业微信机器人配置的同学可以参考：[企业微信机器人](https://work.weixin.qq.com/api/doc/90000/90136/91770)
 
 
-第二步：增加配置文件
+**第二步**：增加配置文件
 
 以下以yml配置文件的配置方式为例
-```
+
+```yml
 exception:
   notice:
     enable: 启用开关 false或不配置的话本项目不会生效
     projectName: 指定异常信息中的项目名，不填的话默认取 spring.application.name的值
     included-trace-package: 追踪信息的包含的包名，配置之后只通知此包下的异常信息
-    period: 异常信息发送的时间周期 以秒为单位 默认值5，异常信息通知并不是立即发送的，默认设置了5s的周期，主要为了防止异常过多通知刷屏，同时钉钉针对异常通知刷屏的情况也增加了限流措施，建议不要修改
+    period: 异常信息发送的时间周期 以秒为单位 默认值5，异常信息通知并不是立即发送的，默认设置了5s的周期
     exclude-exceptions:
       - 需要排除的异常通知，注意 这里是异常类的全路径，可多选
     ## 企业微信配置
@@ -323,23 +250,24 @@ exception:
 #### 3、邮箱配置
 这里以qq邮箱为例 
 
-第一步：项目中引入邮箱相关依赖
-```
+**第一步**：项目中引入邮箱相关依赖
+
+```xml
   <dependency>
      <groupId>org.springframework.boot</groupId>
      <artifactId>spring-boot-starter-mail</artifactId>
   </dependency>
 ```
 
-第二步：增加配置文件
+**第二步**：增加配置文件
  
- ```
+ ```yml
  exception:
    notice:
      enable: 启用开关 false或不配置的话本项目不会生效
      projectName: 指定异常信息中的项目名，不填的话默认取 spring.application.name的值
      included-trace-package: 追踪信息的包含的包名，配置之后只通知此包下的异常信息
-     period: 异常信息发送的时间周期 以秒为单位 默认值5，异常信息通知并不是立即发送的，默认设置了5s的周期，主要为了防止异常过多通知刷屏，同时钉钉针对异常通知刷屏的情况也增加了限流措施，建议不要修改
+     period: 异常信息发送的时间周期 以秒为单位 默认值5，异常信息通知并不是立即发送的，默认设置了5s的周期，主要为了防止异常过多通知刷屏
      exclude-exceptions:
        - 需要排除的异常通知，注意 这里是异常类的全路径，可多选
      ## 邮箱配置
@@ -364,6 +292,9 @@ spring:
 配置好了配置文件，接下来可以写个例子测试一下了
 
 
+<br>
+
+
 ## 三、测试
 
 我这里只演示钉钉预警测试，邮箱和微信企业就不再演示了。
@@ -374,7 +305,6 @@ spring:
 @RestController
 public class TestController {
 
-
     @RequestMapping(value = "/queryUser")
     public void queryUser(@RequestParam("userId") String userId) throws IllegalAccessException {
         throw new IllegalAccessException("监控报警: 用户不存在id=" + userId);
@@ -384,7 +314,7 @@ public class TestController {
 
 `配置类`
 
-```java
+```yml
 exception:
   notice:
     enable: true
@@ -410,16 +340,12 @@ localhost:8084/queryUser?userId=1212
 
 
 
-### 说明
-
-#### 注意
-
-本工具仅支持集成在springboot+mvc项目中，同时需要jdk版本1.8+
+`注意`: 本工具仅支持集成在springboot+mvc项目中，同时需要jdk版本1.8+
 
 
-#### 致谢
+### 感谢
 
-本项目基本上是基于下面项目的，所以非常感谢，不用自己从头造轮子:
-
-1. [exception-notice-spring-boot-starter](https://github.com/kongchong/exception-notice-spring-boot-starter)
+本项目基本上是基于该项目的，所以非常感谢，不用自己从头造轮子:
+ 
+ [exception-notice-spring-boot-starter](https://github.com/kongchong/exception-notice-spring-boot-starter)
 

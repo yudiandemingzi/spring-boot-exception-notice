@@ -24,10 +24,12 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
- * 异常信息通知配置类
+ *  异常信息通知配置类
  *
- * @author kongchong
+ * @author xub
+ * @date 2022/3/30 下午3:01
  */
 @Configuration
 @ConditionalOnProperty(prefix = ExceptionNoticeProperties.PREFIX, name = "enable", havingValue = "true")
