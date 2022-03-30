@@ -14,7 +14,7 @@
 
 ## 一、核心代码
 
-这里只展示一些核心代码，具体的完整代码可以看github: [spring-boot-exception-notice](https://github.com/yudiandemingzi/spring-boot-exception-notice)
+这里只展示一些核心代码
 
 
 #### 1、异常信息数据model
@@ -336,7 +336,7 @@ localhost:8084/queryUser?userId=1212
 `钉钉预警`
 
 
-(图1)
+<img src="https://img2022.cnblogs.com/blog/1090617/202203/1090617-20220330152713737-192757213.jpg"  width="600" height="390">
 
 
 
